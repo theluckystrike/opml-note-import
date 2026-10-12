@@ -10,7 +10,7 @@ The source file stays in place. You can read the new files with the plugin turne
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/select.png" alt="Source selector with sample outline files in the vault" width="720">
 
-The command lists files with an .opml extension from the current vault. Choose a source file, a note level, an output folder, and an optional file name prefix. The import reads the file through the Obsidian vault API.
+The command lists files with an .opml extension from the current vault. Choose a source file, a note level, an output folder, and an optional file name prefix. The import reads the file through the Obsidian vault API. The import decodes the file with the encoding that its XML declaration names, such as ISO-8859-1.
 
 ### Keep nested items and notes
 
@@ -40,7 +40,7 @@ Invalid XML stops the plan before note creation. Files with a DOCTYPE or entity 
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/presets.png" alt="Pro layout controls with a named project preset" width="720">
 
-Pro can save a named layout with its level, folder, prefix, and source property option. Select a saved layout to apply those options to another outline. Saving the same name replaces that preset. The plugin keeps up to 50 layouts in its local data. The source file is selected separately, which lets one layout serve several project exports.
+Pro can save a named layout with its level, folder, prefix, and source property option. Select a saved layout to apply those options to another outline. Saving the same name replaces that preset. The plugin keeps up to 50 layouts in its local data.
 
 ### Preview repeated imports (Pro)
 
@@ -54,7 +54,7 @@ Pro compares planned Markdown with the file at each destination path. It labels 
 
 Use the release files supplied by the publisher. Copy main.js, manifest.json, and styles.css into a folder named opml-note-import inside your vault's community plugin folder. Restart Obsidian or reload community plugins, then enable OPML Note Import.
 
-The manifest states the minimum supported Obsidian version. The code uses public Obsidian APIs and browser APIs. No Node or Electron API is part of the import. This permits mobile installation, but a phone or tablet test has not been completed.
+The code uses public Obsidian APIs and browser APIs. No Node or Electron API is part of the import. This permits mobile installation, but a phone or tablet test has not been completed.
 
 ## Usage
 
@@ -77,7 +77,7 @@ The plugin account tab contains the optional GitHub Sponsors controls. Free use 
 
 ## FAQ
 
-Can this import a feed subscription export? It can preserve outline text and common URL attributes, including xmlUrl. It does not download articles, subscribe to feeds, or import attachments. Choose a feed reader for those tasks.
+Can this import a feed subscription export? It can preserve outline text and common URL attributes, including xmlUrl. It does not download articles, subscribe to feeds, or import attachments.
 
 What happens to rich text? HTML that arrives as escaped attribute text remains visible as text. Markdown control characters are escaped to reduce accidental formatting. Text outside the supported outline attributes is not converted.
 

@@ -7,6 +7,11 @@ export interface ImportPlan { notes: PlannedNote[]; warnings: string[] }
 export const MAX_DEPTH = 6;
 export const DEFAULT_LAYOUT: Layout = { folder: 'OPML imports', prefix: '', includeSource: true, depth: 1 };
 
+/** The encoding label of the XML declaration, or null when the file has none. */
+export function declaredEncoding(xml: string): string | null {
+	return /^\uFEFF?<\?xml\s[^?>]*?\bencoding\s*=\s*["']([A-Za-z][\w.:-]*)["']/.exec(xml)?.[1] ?? null;
+}
+
 /** Check XML syntax before DOMParser. The browser parser supplies decoded attributes. */
 function checkXml(xml: string): void {
 	if (xml.length > 2_000_000) throw new Error('The OPML file exceeds the 2 MB text limit.');

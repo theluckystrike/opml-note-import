@@ -2,7 +2,7 @@ import { Modal, Notice, Plugin, Setting, TFile, TFolder, normalizePath } from 'o
 import { createGitHubSponsors } from './license/github-obsidian';
 import type { SponsorsManager } from './license/index';
 import { bindPro, isPro, onProChange, resetPro, SPONSORS } from './pro';
-import { cleanLayout, compareText, MAX_DEPTH, planImport, type ImportPlan, type Layout } from './outline';
+import { cleanLayout, compareText, declaredEncoding, MAX_DEPTH, planImport, type ImportPlan, type Layout } from './outline';
 import { DEFAULT_SETTINGS, normalizeSettings, OpmlNoteImportSettingTab, type OpmlNoteImportSettings } from './settings';
 
 export default class OpmlNoteImportPlugin extends Plugin {
@@ -28,13 +28,22 @@ export default class OpmlNoteImportPlugin extends Plugin {
 		const options = cleanLayout({ ...layout });
 		const file = this.app.vault.getAbstractFileByPath(normalizePath(source));
 		if (!(file instanceof TFile) || file.extension.toLowerCase() !== 'opml') throw new Error('Select an OPML file in the vault.');
-		const plan = planImport(await this.app.vault.read(file), file.path, options, this.app.vault.getAllLoadedFiles().map((f) => f.path));
+		const plan = planImport(await this.readOutline(file), file.path, options, this.app.vault.getAllLoadedFiles().map((f) => f.path));
 		for (const note of plan.notes) {
 			if (this.app.vault.getAbstractFileByPath(note.path)) note.status = 'skip';
 			const parts = note.path.split('/'); parts.pop(); let parent = '';
 			for (const part of parts) { parent = normalizePath(`${parent}/${part}`); const found = this.app.vault.getAbstractFileByPath(parent); if (found && !(found instanceof TFolder)) throw new Error(`A file blocks the destination folder: ${parent}`); }
 		}
 		return plan;
+	}
+	/** Obsidian reads text as UTF-8. Read the bytes again when the XML declaration names another encoding. */
+	private async readOutline(file: TFile): Promise<string> {
+		const text = await this.app.vault.read(file);
+		const label = declaredEncoding(text);
+		if (!label || /^utf-?8$/i.test(label)) return text;
+		let decoder: TextDecoder;
+		try { decoder = new TextDecoder(label); } catch { throw new Error(`The outline uses the ${label} encoding, which this app cannot read.`); }
+		return decoder.decode(await this.app.vault.readBinary(file));
 	}
 	async runImport(source: string, layout: Layout): Promise<{ created: string[]; skipped: string[]; errors: string[]; warnings: string[] }> {
 		if (this.stopped) throw new Error('The plugin has stopped.');

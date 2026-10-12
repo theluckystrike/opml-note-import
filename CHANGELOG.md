@@ -1,5 +1,11 @@
 # opml-note-import
 
+## 1.1.1
+
+### Patch Changes
+
+- 3a0865d: Decode an outline file with the encoding that its XML declaration names, so Latin-1 exports keep their accented characters.
+
 ## 1.1.0
 
 ### Minor Changes
