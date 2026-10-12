@@ -2,7 +2,7 @@ import { Modal, Notice, Plugin, Setting, TFile, TFolder, normalizePath } from 'o
 import { createGitHubSponsors } from './license/github-obsidian';
 import type { SponsorsManager } from './license/index';
 import { bindPro, isPro, onProChange, resetPro, SPONSORS } from './pro';
-import { cleanLayout, compareText, planImport, type ImportPlan, type Layout } from './outline';
+import { cleanLayout, compareText, MAX_DEPTH, planImport, type ImportPlan, type Layout } from './outline';
 import { DEFAULT_SETTINGS, normalizeSettings, OpmlNoteImportSettingTab, type OpmlNoteImportSettings } from './settings';
 
 export default class OpmlNoteImportPlugin extends Plugin {
@@ -36,12 +36,12 @@ export default class OpmlNoteImportPlugin extends Plugin {
 		}
 		return plan;
 	}
-	async runImport(source: string, layout: Layout): Promise<{ created: string[]; skipped: string[]; errors: string[] }> {
+	async runImport(source: string, layout: Layout): Promise<{ created: string[]; skipped: string[]; errors: string[]; warnings: string[] }> {
 		if (this.stopped) throw new Error('The plugin has stopped.');
 		if (this.importing) throw new Error('An import is in progress.');
 		this.importing = true;
 		try {
-			const plan = await this.preview(source, layout); const result = { created: [] as string[], skipped: [] as string[], errors: [] as string[] };
+			const plan = await this.preview(source, layout); const result = { created: [] as string[], skipped: [] as string[], errors: [] as string[], warnings: plan.warnings };
 			if (this.stopped) throw new Error('The plugin has stopped.');
 			for (const note of plan.notes) {
 				if (this.stopped) { result.errors.push('The plugin has stopped. Remaining notes were not created.'); break; }
@@ -86,21 +86,22 @@ export class ImportModal extends Modal {
 	onClose(): void { this.revision++; this.release?.(); this.contentEl.empty(); this.importer.removeDialog(this); }
 	private draw(): void {
 		this.revision++; this.contentEl.empty(); const el = this.contentEl;
-		el.createEl('p', { text: 'One note per root item. Nested items stay in order. Existing notes are skipped.' });
+		el.createEl('p', { text: 'One note per item at the chosen level. Nested items stay in order. Existing notes are skipped.' });
 		const files = this.app.vault.getFiles().filter((f) => f.extension.toLowerCase() === 'opml');
 		if (!this.source) this.source = files[0]?.path ?? '';
 		new Setting(el).setName('Source file').addDropdown((d) => { d.addOption('', 'Select a file'); for (const f of files) d.addOption(f.path, f.path); d.setValue(this.source).onChange((v) => { this.source = v; this.invalidate(); }); });
 		new Setting(el).setName('Destination folder').addText((t) => t.setValue(this.layout.folder).onChange((v) => { this.layout.folder = v; this.invalidate(); }));
 		new Setting(el).setName('File name prefix').addText((t) => t.setValue(this.layout.prefix).onChange((v) => { this.layout.prefix = v; this.invalidate(); }));
-		new Setting(el).setName('Source properties').setDesc('Add the source path and root number to each new note.').addToggle((t) => t.setValue(this.layout.includeSource).onChange((v) => { this.layout.includeSource = v; this.invalidate(); }));
+		new Setting(el).setName('Note level').setDesc('Level 1 makes one note for each root item. A higher level makes one note for each item at that level.').addDropdown((d) => { for (let n = 1; n <= MAX_DEPTH; n++) d.addOption(String(n), n === 1 ? '1 (root items)' : String(n)); d.setValue(String(this.layout.depth)).onChange((v) => { this.layout.depth = Number(v); this.invalidate(); }); });
+		new Setting(el).setName('Source properties').setDesc('Add the source path and root number to each new note. A level above 1 also adds the level and parent items.').addToggle((t) => t.setValue(this.layout.includeSource).onChange((v) => { this.layout.includeSource = v; this.invalidate(); }));
 		new Setting(el).setName('Preview and import').addButton((b) => b.setButtonText('Preview').onClick(() => this.showPreview())).addButton((b) => b.setButtonText('Import notes').setCta().onClick(async () => {
 			b.setDisabled(true); this.revision++;
-			try { const result = await this.importer.runImport(this.source, this.layout); this.output.empty(); this.output.createEl('pre', { text: `Created ${result.created.length} notes. Skipped ${result.skipped.length}. Errors ${result.errors.length}.\n\n${[...result.created.map((p) => 'Created: ' + p), ...result.skipped.map((p) => 'Skipped: ' + p), ...result.errors].join('\n')}` }); this.importer.settings.layout = { ...this.layout }; await this.importer.saveSettings(); }
+			try { const result = await this.importer.runImport(this.source, this.layout); this.output.empty(); this.output.createEl('pre', { text: `Created ${result.created.length} notes. Skipped ${result.skipped.length}. Errors ${result.errors.length}.\n\n${[...result.created.map((p) => 'Created: ' + p), ...result.skipped.map((p) => 'Skipped: ' + p), ...result.errors, ...result.warnings].join('\n')}` }); this.importer.settings.layout = { ...this.layout }; await this.importer.saveSettings(); }
 			catch (error) { this.showError(error); } finally { b.setDisabled(false); }
 		}));
 		this.output = el.createDiv({ cls: 'opml-note-import-output' }); this.output.createEl('p', { text: files.length ? 'Select Preview to inspect names and text.' : 'Copy an .opml file into the vault, then open this command again.' });
 		const proControls = el.createEl('details', { cls: 'opml-note-import-pro' }); proControls.createEl('summary', { text: 'Pro layouts and repeat preview' });
-		new Setting(proControls).setName('Pro layout presets').setDesc(isPro() ? 'Save the folder, prefix and source property option.' : 'Saved layouts and repeat previews need Pro. Open the plugin settings to sign in.').addDropdown((d) => { d.addOption('', 'Select a preset'); if (isPro()) for (const p of this.importer.settings.presets) d.addOption(p.name, p.name); d.setDisabled(!isPro()).onChange((v) => { if (!isPro()) return; const p = this.importer.settings.presets.find((x) => x.name === v); if (p) { this.layout = { folder: p.folder, prefix: p.prefix, includeSource: p.includeSource }; this.draw(); } }); });
+		new Setting(proControls).setName('Pro layout presets').setDesc(isPro() ? 'Save the folder, prefix, level and source property option.' : 'Saved layouts and repeat previews need Pro. Open the plugin settings to sign in.').addDropdown((d) => { d.addOption('', 'Select a preset'); if (isPro()) for (const p of this.importer.settings.presets) d.addOption(p.name, p.name); d.setDisabled(!isPro()).onChange((v) => { if (!isPro()) return; const p = this.importer.settings.presets.find((x) => x.name === v); if (p) { this.layout = { folder: p.folder, prefix: p.prefix, includeSource: p.includeSource, depth: p.depth }; this.draw(); } }); });
 		let presetName = '';
 		new Setting(proControls).setName('Preset name').addText((t) => t.setDisabled(!isPro()).onChange((v) => { presetName = v; })).addButton((b) => b.setButtonText('Save preset').setDisabled(!isPro()).onClick(async () => { try { if (await this.importer.savePreset(presetName, this.layout)) { new Notice('Import layout saved.'); this.draw(); } } catch (error) { this.showError(error); } }));
 		new Setting(proControls).setName('Repeated outline import').addButton((b) => b.setButtonText('Preview changes').setDisabled(!isPro()).onClick(async () => {
@@ -114,7 +115,7 @@ export class ImportModal extends Modal {
 		const revision = ++this.revision;
 		try {
 			const plan = await this.importer.preview(this.source, this.layout); if (revision !== this.revision) return;
-			this.output.empty(); this.output.createEl('p', { text: `${plan.notes.length} root notes. ${plan.notes.filter((n) => n.status === 'skip').length} existing paths will be skipped.` });
+			this.output.empty(); this.output.createEl('p', { text: `${plan.notes.length} ${this.layout.depth === 1 ? 'root notes' : `notes from level ${this.layout.depth}`}. ${plan.notes.filter((n) => n.status === 'skip').length} existing paths will be skipped.` });
 			for (const note of plan.notes) { const detail = this.output.createEl('details'); detail.createEl('summary', { text: `${note.path} — ${note.status}${note.duplicate ? ' — name conflict, numbered suffix' : ''}` }); detail.createEl('pre', { text: note.content }); }
 			for (const warning of plan.warnings) this.output.createEl('p', { text: warning });
 			this.output.scrollIntoView({ block: 'nearest' });

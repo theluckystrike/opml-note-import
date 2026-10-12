@@ -1,10 +1,11 @@
 import { normalizePath, stringifyYaml } from 'obsidian';
 
 export interface OutlineItem { text: string; notes: string[]; urls: string[]; children: OutlineItem[] }
-export interface Layout { folder: string; prefix: string; includeSource: boolean }
+export interface Layout { folder: string; prefix: string; includeSource: boolean; depth: number }
 export interface PlannedNote { path: string; content: string; duplicate: boolean; status: 'new' | 'skip'; sourceId: string }
 export interface ImportPlan { notes: PlannedNote[]; warnings: string[] }
-export const DEFAULT_LAYOUT: Layout = { folder: 'OPML imports', prefix: '', includeSource: true };
+export const MAX_DEPTH = 6;
+export const DEFAULT_LAYOUT: Layout = { folder: 'OPML imports', prefix: '', includeSource: true, depth: 1 };
 
 /** Check XML syntax before DOMParser. The browser parser supplies decoded attributes. */
 function checkXml(xml: string): void {
@@ -46,7 +47,10 @@ export function safeName(text: string): string {
 export function cleanLayout(layout: Layout): Layout {
 	const folder = normalizePath(layout.folder.trim());
 	if (Array.from(folder).some((c) => c.charCodeAt(0) < 32) || folder.split('/').some((s) => s === '..' || s === '.' || /[:*?"<>|]/.test(s)) || folder.split('/').some((s) => s.startsWith('.'))) throw new Error('Use a vault folder path without reserved characters or dot segments.');
-	return { folder, prefix: layout.prefix, includeSource: layout.includeSource };
+	// Saved layouts and old callers have no level. Treat that as level 1.
+	const depth = layout.depth ?? 1;
+	if (!Number.isInteger(depth) || depth < 1 || depth > MAX_DEPTH) throw new Error(`Use a level from 1 to ${MAX_DEPTH}.`);
+	return { folder, prefix: layout.prefix, includeSource: layout.includeSource, depth };
 }
 function literal(text: string): string {
 	return text.replace(/\\/g, '\\\\').replace(/([`*_{}[\]<>#!|%])/g, '\\$1').replace(/\r\n?/g, '\n');
@@ -89,15 +93,27 @@ export function planImport(xml: string, source = 'Outline.opml', layout: Layout 
 	const options = cleanLayout(layout); const used = new Set<string>();
 	const existingPaths = new Set(existing.map((path) => path.toLowerCase()));
 	const nextSuffix = new Map<string, number>();
-	const notes = roots.map((root, index): PlannedNote => {
-		const base = safeName(options.prefix + root.text); let title = base; let suffix = nextSuffix.get(base.toLowerCase()) ?? 2;
+	// Level 1 items are the roots. A higher level takes the items at that level, in source order.
+	const targets: { item: OutlineItem; parents: string[]; ids: number[] }[] = [];
+	const collect = (item: OutlineItem, level: number, parents: string[], ids: number[]) => {
+		if (level === options.depth) { targets.push({ item, parents, ids }); return; }
+		const lost = [item.notes.length ? 'note text' : '', item.urls.length ? 'URLs' : ''].filter(Boolean);
+		if (lost.length) warnings.push(`${item.text} is at level ${level}. Its ${lost.join(' and ')} ${item.urls.length ? 'are' : 'is'} not imported.`);
+		if (!item.children.length) warnings.push(`${item.text} is at level ${level} and has no level ${options.depth} items, so it creates no note.`);
+		item.children.forEach((child, i) => collect(child, level + 1, [...parents, item.text], [...ids, i + 1]));
+	};
+	roots.forEach((root, i) => collect(root, 1, [], [i + 1]));
+	const notes = targets.map(({ item, parents, ids }): PlannedNote => {
+		const base = safeName(options.prefix + item.text); let title = base; let suffix = nextSuffix.get(base.toLowerCase()) ?? 2;
 		while (used.has(title.toLowerCase())) title = `${base} ${suffix++}`;
 		nextSuffix.set(base.toLowerCase(), suffix);
 		const duplicate = title !== base; used.add(title.toLowerCase());
 		const path = normalizePath(`${options.folder}/${title}.md`);
-		const sourceId = `${normalizePath(source)}#${index + 1}`;
-		const header = options.includeSource ? `---\n${stringifyYaml({ opml_source: normalizePath(source), opml_root: index + 1, opml_source_id: sourceId })}---\n\n` : '';
-		return { path, content: header + renderItem(root), duplicate, status: existingPaths.has(path.toLowerCase()) ? 'skip' : 'new', sourceId };
+		const sourceId = `${normalizePath(source)}#${ids.join('.')}`;
+		const meta: Record<string, unknown> = { opml_source: normalizePath(source), opml_root: ids[0], opml_source_id: sourceId };
+		if (options.depth > 1) { meta.opml_level = options.depth; meta.opml_parents = parents; }
+		const header = options.includeSource ? `---\n${stringifyYaml(meta)}---\n\n` : '';
+		return { path, content: header + renderItem(item), duplicate, status: existingPaths.has(path.toLowerCase()) ? 'skip' : 'new', sourceId };
 	});
 	return { notes, warnings };
 }

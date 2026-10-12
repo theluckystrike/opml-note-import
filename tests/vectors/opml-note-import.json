@@ -529,6 +529,195 @@
      "# A\n\n- one\n  - two\n    - three\n"
     ]
    }
+  },
+  {
+   "name": "Level 2 makes one note for each child of the root",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"Journal\"><outline text=\"Mon\"><outline text=\"Walk\"/></outline><outline text=\"Tue\"/></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 2
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/Mon.md",
+     "OPML imports/Tue.md"
+    ],
+    "bodies": [
+     "# Mon\n\n- Walk\n",
+     "# Tue\n"
+    ]
+   }
+  },
+  {
+   "name": "Level 2 keeps source order across several roots",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"X\"><outline text=\"a\"/><outline text=\"b\"/></outline><outline text=\"Y\"><outline text=\"c\"/></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 2
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/a.md",
+     "OPML imports/b.md",
+     "OPML imports/c.md"
+    ]
+   }
+  },
+  {
+   "name": "Same child names under different roots get numbered paths",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"X\"><outline text=\"Week\"/></outline><outline text=\"Y\"><outline text=\"Week\"/></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 2
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/Week.md",
+     "OPML imports/Week 2.md"
+    ],
+    "duplicates": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "name": "Level 3 reaches grandchildren",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"><outline text=\"B\"><outline text=\"C\" _note=\"Deep\"/></outline></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 3
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/C.md"
+    ],
+    "bodies": [
+     "# C\n\nDeep\n"
+    ]
+   }
+  },
+  {
+   "name": "A leaf above the chosen level creates no note and is reported",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"><outline text=\"B\"/></outline><outline text=\"Lone\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 2
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/B.md"
+    ],
+    "warnings": [
+     "Lone is at level 1 and has no level 2 items, so it creates no note."
+    ]
+   }
+  },
+  {
+   "name": "Note text above the chosen level is reported",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\" _note=\"Lost\"><outline text=\"B\"/></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 2
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/B.md"
+    ],
+    "warnings": [
+     "A is at level 1. Its note text is not imported."
+    ]
+   }
+  },
+  {
+   "name": "A level deeper than the outline creates zero notes",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"><outline text=\"B\"/></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 4
+    },
+    []
+   ],
+   "expected": {
+    "paths": [],
+    "warnings": [
+     "B is at level 2 and has no level 4 items, so it creates no note."
+    ]
+   }
+  },
+  {
+   "name": "A level above 6 is rejected",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 7
+    },
+    []
+   ],
+   "expected": {
+    "error": "Use a level from 1 to 6"
+   }
+  },
+  {
+   "name": "A level of 0 is rejected",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true,
+     "depth": 0
+    },
+    []
+   ],
+   "expected": {
+    "error": "Use a level from 1 to 6"
+   }
   }
  ],
  "note": "Args are the positional planImport arguments. Expected fields select paths, bodies without generated source properties, duplicates, statuses or warnings from the plan. An expected error gives the message prefix of a rejected input."

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from 'obsidian-test-mocks/obsidian';
 import OpmlNoteImportPlugin from '../src/main';
-import { OpmlNoteImportSettingTab } from '../src/settings';
+import { OpmlNoteImportSettingTab, normalizeSettings } from '../src/settings';
 import { DEFAULT_LAYOUT, planImport, safeName } from '../src/outline';
 import { bindPro, resetPro } from '../src/pro';
 import manifest from '../manifest.json';
@@ -105,5 +105,68 @@ describe('review regressions', () => {
   await p.savePreset('Layout 50', { ...DEFAULT_LAYOUT, prefix: 'Updated ' });
   expect(p.settings.presets).toHaveLength(50);
   expect(p.settings.presets.at(-1)?.prefix).toBe('Updated ');
+ });
+});
+
+describe('note level', () => {
+ const tree = '<opml><body><outline text="Journal" xmlUrl="https://example.invalid/j"><outline text="Mon"><outline text="Walk"/></outline><outline text="Tue"/></outline></body></opml>';
+ it('adds the level and the parent items to the source properties', () => {
+  const [mon, tue] = planImport(tree, 'Folder/Journal.opml', { ...DEFAULT_LAYOUT, depth: 2 }).notes;
+  expect(mon?.content).toContain('opml_root: 1');
+  expect(mon?.content).toContain('opml_source_id: Folder/Journal.opml#1.1');
+  expect(mon?.content).toContain('opml_level: 2');
+  expect(mon?.content).toMatch(/opml_parents:\n {2}- Journal\n/);
+  expect(tue?.sourceId).toBe('Folder/Journal.opml#1.2');
+ });
+ it('keeps the level 1 properties as they were', () => {
+  const content = planImport(tree, 'Journal.opml').notes[0]?.content ?? '';
+  expect(content).toContain('opml_source_id: Journal.opml#1');
+  expect(content).not.toContain('opml_level');
+  expect(content).not.toContain('opml_parents');
+ });
+ it('treats a layout with no level as level 1', () => {
+  const layout = { folder: 'OPML imports', prefix: '', includeSource: false } as never;
+  expect(planImport(tree, 'Journal.opml', layout).notes).toHaveLength(1);
+ });
+ it('rejects a level that is not a whole number from 1 to 6', () => {
+  for (const depth of [0, 1.5, 7, Number.NaN]) expect(() => planImport(tree, 'Journal.opml', { ...DEFAULT_LAYOUT, depth })).toThrow('Use a level from 1 to 6');
+ });
+ it('repairs a bad saved level and keeps a good one', () => {
+  const saved = normalizeSettings({ layout: { folder: 'A', prefix: '', includeSource: true, depth: 9 }, presets: [{ name: 'Plan', folder: 'B', prefix: '', includeSource: true, depth: 3 }, { name: 'Old', folder: 'C' }] });
+  expect(saved.layout.depth).toBe(1);
+  expect(saved.presets.map((preset) => preset.depth)).toEqual([3, 1]);
+ });
+ it('imports the notes of a chosen level through the vault', async () => {
+  const p = plugin({ 'Journal.opml': tree });
+  const result = await p.runImport('Journal.opml', { ...DEFAULT_LAYOUT, depth: 2 });
+  expect(result.created).toEqual(['OPML imports/Mon.md', 'OPML imports/Tue.md']);
+  expect(await p.app.vault.read(p.app.vault.getFileByPath('OPML imports/Mon.md')!)).toContain('- Walk');
+ });
+ it('lets a Pro preset keep the level', async () => {
+  bindPro({ isPro: () => true, onChange: () => () => {} } as never);
+  const p = plugin(); vi.spyOn(p, 'saveSettings').mockResolvedValue();
+  await p.savePreset('Journal', { ...DEFAULT_LAYOUT, depth: 2 });
+  expect(p.settings.presets[0]?.depth).toBe(2);
+  await expect(p.savePreset('Bad', { ...DEFAULT_LAYOUT, depth: 8 })).rejects.toThrow('level');
+ });
+ it('counts every item toward the 10000 item limit at a higher level', () => {
+  const inner = '<outline text="B"/>'.repeat(9_999);
+  expect(planImport(`<opml><body><outline text="A">${inner}</outline></body></opml>`, 'Outline.opml', { ...DEFAULT_LAYOUT, depth: 2, includeSource: false }).notes).toHaveLength(9_999);
+  expect(() => planImport(`<opml><body><outline text="A">${inner}<outline/><outline/></outline></body></opml>`, 'Outline.opml', { ...DEFAULT_LAYOUT, depth: 2 })).toThrow('10000 item');
+ }, 30000);
+});
+
+describe('note level review', () => {
+ const lossy = '<opml><body><outline text="Feeds" xmlUrl="https://example.invalid/f"><outline text="Mon"/></outline><outline text="Lone" _note="Kept?"/></body></opml>';
+ it('names URLs, not only note text, on an item above the level', () => {
+  const { warnings } = planImport(lossy, 'Outline.opml', { ...DEFAULT_LAYOUT, depth: 2 });
+  expect(warnings).toContain('Feeds is at level 1. Its URLs are not imported.');
+  expect(warnings).toContain('Lone is at level 1. Its note text is not imported.');
+ });
+ it('returns the level warnings with the import result', async () => {
+  const p = plugin({ 'Outline.opml': lossy });
+  const result = await p.runImport('Outline.opml', { ...DEFAULT_LAYOUT, depth: 2 });
+  expect(result.created).toEqual(['OPML imports/Mon.md']);
+  expect(result.warnings).toContain('Lone is at level 1 and has no level 2 items, so it creates no note.');
  });
 });

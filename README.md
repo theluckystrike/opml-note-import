@@ -1,8 +1,8 @@
 # OPML Note Import
 
-Convert outline exports into ordered Markdown notes. Start with an OPML file in your vault, inspect the proposed paths, then create one note for each root outline item. Child items become nested lists. Item notes stay with their outline text.
+Convert outline exports into ordered Markdown notes. Start with an OPML file in your vault, inspect the proposed paths, then create one note for each root item, or for each item at a deeper level that you choose. Child items become nested lists. Item notes stay with their outline text.
 
-A root named Launch plan can become Launch plan.md, while a second root named Reading list becomes Reading list.md. The source file stays in place. You can read the new files with the plugin turned off.
+The source file stays in place. You can read the new files with the plugin turned off.
 
 ## Features
 
@@ -10,13 +10,19 @@ A root named Launch plan can become Launch plan.md, while a second root named Re
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/select.png" alt="Source selector with sample outline files in the vault" width="720">
 
-The command lists files with an .opml extension from the current vault. Choose a source file, an output folder, and an optional file name prefix. The import reads the file through the Obsidian vault API. You do not need to upload the outline or connect the outline tool that produced it.
+The command lists files with an .opml extension from the current vault. Choose a source file, a note level, an output folder, and an optional file name prefix. The import reads the file through the Obsidian vault API.
 
 ### Keep nested items and notes
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/preview.png" alt="Preview with root note paths and nested outline text" width="720">
 
-Each root item becomes a heading in a separate note. Child order and indentation follow the source outline. The parser reads text, note, and _note attributes. If an item has both note attributes, both values appear in source attribute order. XML character references become text. Escaped HTML stays literal text, so a bold tag does not become Markdown formatting. Common URL attributes appear as text beneath the item.
+Each selected item becomes the heading of a separate note. Child order and indentation follow the source outline. The parser reads text, note, and _note attributes. If an item has both note attributes, both values appear in source attribute order. XML character references become text. Escaped HTML stays literal text, so a bold tag does not become Markdown formatting. Common URL attributes appear as text beneath the item.
+
+### Choose the note level
+
+<img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/levels.png" alt="Level 2 preview with one note for each dated child of a journal root" width="720">
+
+Level 1 makes one note for each root item. If one root item holds the whole outline, choose level 2 or higher. The plugin then makes one note for each item at that level, in source order. Levels run from 1 to 6. Items above the chosen level make no notes. With source properties on, each note lists its level and parent items. Note text and URLs on those items are not imported. The preview and the import result name each such item with note text or URLs, and each branch that ends above the chosen level.
 
 ### Inspect file name conflicts
 
@@ -28,13 +34,13 @@ Preview lists the proposed paths before you write files. Duplicate safe names re
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/invalid.png" alt="Malformed XML error in the preview" width="720">
 
-Invalid XML stops the plan before note creation. Files with a DOCTYPE or entity declaration are rejected before DOMParser runs. The import does not fetch feeds or external entities. Unknown outline attributes are reported by name, so you can inspect data that this version does not convert. The preview does not claim that those attribute values were imported.
+Invalid XML stops the plan before note creation. Files with a DOCTYPE or entity declaration are rejected before DOMParser runs. The import does not fetch feeds or external entities. Unknown outline attributes are reported by name, so you can inspect data that this version does not convert.
 
 ### Save layouts (Pro)
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/presets.png" alt="Pro layout controls with a named project preset" width="720">
 
-Pro can save a named layout with its folder, prefix, and source property option. Select a saved layout to apply those options to another outline. Saving the same name replaces that preset. The plugin keeps up to 50 layouts in its local data. The source file is selected separately, which lets one layout serve several project exports.
+Pro can save a named layout with its level, folder, prefix, and source property option. Select a saved layout to apply those options to another outline. Saving the same name replaces that preset. The plugin keeps up to 50 layouts in its local data. The source file is selected separately, which lets one layout serve several project exports.
 
 ### Preview repeated imports (Pro)
 
@@ -46,28 +52,28 @@ Pro compares planned Markdown with the file at each destination path. It labels 
 
 ## Install
 
-Use the release files supplied by the publisher. Copy main.js, manifest.json, and styles.css into a folder named opml-note-import inside your vault's community plugin folder. Restart Obsidian or reload community plugins, then enable OPML Note Import. Use a test vault for your first import if you want to inspect the output before adding it to your working notes.
+Use the release files supplied by the publisher. Copy main.js, manifest.json, and styles.css into a folder named opml-note-import inside your vault's community plugin folder. Restart Obsidian or reload community plugins, then enable OPML Note Import.
 
-The manifest states the minimum supported Obsidian version. The code uses public Obsidian APIs and browser APIs. No Node or Electron API is part of the import. This permits mobile installation, but a phone or tablet test has not been completed. Desktop test results do not establish device support.
+The manifest states the minimum supported Obsidian version. The code uses public Obsidian APIs and browser APIs. No Node or Electron API is part of the import. This permits mobile installation, but a phone or tablet test has not been completed.
 
 ## Usage
 
 1. Export an outline as OPML from your outline tool.
 2. Copy the .opml file into the vault. If it is not in the file explorer, check the vault's file visibility options.
 3. Run OPML Note Import: Import an outline file from the command palette.
-4. Select the source, folder, prefix, and source property option.
-5. Select Preview. Expand a root path to inspect its Markdown text.
+4. Select the source, level, folder, prefix, and source property option.
+5. Select Preview. Expand a path to inspect its Markdown text.
 6. Select Import notes. Read the created, skipped, and error paths in the result.
 
-A destination folder is created when needed. The default folder is OPML imports. An empty folder field puts notes at the vault root. The importer rejects dot segments, hidden folder segments, and reserved path characters. A root title is limited to 100 Unicode characters and 240 UTF-8 bytes, then cleaned for a file name. Leading dots get an underscore. A missing or blank title becomes Untitled. A reserved device name gets an underscore prefix.
+A destination folder is created when needed. The default folder is OPML imports. An empty folder field puts notes at the vault root. The importer rejects dot segments, hidden folder segments, and reserved path characters. A note title is limited to 100 Unicode characters and 240 UTF-8 bytes, then cleaned for a file name. Leading dots get an underscore. A missing or blank title becomes Untitled. A reserved device name gets an underscore prefix.
 
-For a repeated export, use the same folder and prefix to compare matching paths. A renamed root appears as a new path. The repeat preview does not find removed roots or notes that you moved elsewhere. Import notes still skips existing paths after a comparison. Move or rename output notes yourself if you need a fresh copy without changing the earlier import.
+For a repeated export, use the same level, folder, and prefix to compare matching paths. A renamed item appears as a new path. The repeat preview does not find removed items or notes that you moved elsewhere. Import notes still skips existing paths after a comparison.
 
 ## Settings
 
-The import dialog contains the layout controls. After an import result, those controls become the starting layout for the next dialog. Source properties are on by default. They add the source path, root number, and source id to YAML frontmatter. A source id consists of the vault source path and the root's position; it is not a permanent identity across root reordering.
+The import dialog contains the layout controls. Source properties are on by default. They add the source path, root number, and source id to YAML frontmatter. A level above 1 also adds the level and the parent items. A source id consists of the vault source path and the item's position, such as Journal.opml#1.2; it is not a permanent identity if you reorder items.
 
-The plugin account tab contains the optional GitHub Sponsors controls. Free use includes selecting files, previewing names and text, importing roots, reporting conflicts, and keeping nested notes. There is no paid root count limit. Saved presets and repeat comparisons require an active Pro state. The parser limits remain the same in both tiers.
+The plugin account tab contains the optional GitHub Sponsors controls. Free use includes selecting files, previewing names and text, importing notes, reporting conflicts, and keeping nested notes. There is no paid note count limit. Saved presets and repeat comparisons require an active Pro state. The parser limits remain the same in both tiers.
 
 ## FAQ
 
