@@ -1,0 +1,535 @@
+{
+ "slug": "opml-note-import",
+ "module": "products/opml-note-import/src/outline.ts",
+ "function": "planImport",
+ "cases": [
+  {
+   "name": "Root items A and B stay in source order",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"/><outline text=\"B\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/A.md",
+     "OPML imports/B.md"
+    ],
+    "bodies": [
+     "# A\n",
+     "# B\n"
+    ]
+   }
+  },
+  {
+   "name": "Nested items keep order and indentation",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"><outline text=\"one\"><outline text=\"sub\"/></outline><outline text=\"two\"/></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A\n\n- one\n  - sub\n- two\n"
+    ]
+   }
+  },
+  {
+   "name": "XML ampersand is decoded",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A &amp; B\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A & B\n"
+    ]
+   }
+  },
+  {
+   "name": "Underscore note is kept",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\" _note=\"Detail\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A\n\nDetail\n"
+    ]
+   }
+  },
+  {
+   "name": "Both note attributes keep attribute order",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\" note=\"First\" _note=\"Second\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A\n\nFirst\n\nSecond\n"
+    ]
+   }
+  },
+  {
+   "name": "Both note attributes keep reverse order",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\" _note=\"First\" note=\"Second\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A\n\nFirst\n\nSecond\n"
+    ]
+   }
+  },
+  {
+   "name": "Malformed XML creates no plan",
+   "args": [
+    "<opml><body><outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "error": "Invalid XML"
+   }
+  },
+  {
+   "name": "Duplicate roots get stable numbered paths",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"/><outline text=\"A\"/><outline text=\"A 2\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/A.md",
+     "OPML imports/A 2.md",
+     "OPML imports/A 2 2.md"
+    ],
+    "duplicates": [
+     false,
+     true,
+     true
+    ]
+   }
+  },
+  {
+   "name": "DOCTYPE is rejected",
+   "args": [
+    "<!DOCTYPE opml SYSTEM \"https://example.invalid/a\"><opml><body/></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "error": "DOCTYPE"
+   }
+  },
+  {
+   "name": "Entity declaration is rejected",
+   "args": [
+    "<!ENTITY x SYSTEM \"file:///private\"><opml><body/></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "error": "DOCTYPE"
+   }
+  },
+  {
+   "name": "RSS URL stays as text",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"News\" type=\"rss\" xmlUrl=\"https://example.invalid/feed\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# News\n\nhttps://example.invalid/feed\n"
+    ]
+   }
+  },
+  {
+   "name": "Existing output is skipped",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    [
+     "OPML imports/A.md"
+    ]
+   ],
+   "expected": {
+    "statuses": [
+     "skip"
+    ]
+   }
+  },
+  {
+   "name": "Unicode title is kept",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"日記 café\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/日記 café.md"
+    ]
+   }
+  },
+  {
+   "name": "Reserved path characters are replaced",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A/B: C?\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/A B C.md"
+    ]
+   }
+  },
+  {
+   "name": "Blank title has a safe fallback",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/Untitled.md"
+    ]
+   }
+  },
+  {
+   "name": "Unknown attributes are reported",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\" color=\"red\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "warnings": [
+     "Unknown attribute color on A."
+    ]
+   }
+  },
+  {
+   "name": "Child note is indented beneath its item",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"><outline text=\"one\" note=\"Line&#10;Two\"/></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A\n\n- one\n  Line\n  Two\n"
+    ]
+   }
+  },
+  {
+   "name": "Escaped HTML stays literal text",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\" note=\"&lt;b&gt;Detail&lt;/b&gt;\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A\n\n\\<b\\>Detail\\</b\\>\n"
+    ]
+   }
+  },
+  {
+   "name": "Numeric character reference is decoded",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A &#38; B\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A & B\n"
+    ]
+   }
+  },
+  {
+   "name": "Empty body creates zero notes",
+   "args": [
+    "<opml version=\"2.0\"><body></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": []
+   }
+  },
+  {
+   "name": "Case variants produce a conflict",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"/><outline text=\"a\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/A.md",
+     "OPML imports/a 2.md"
+    ],
+    "duplicates": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "name": "Reserved device name gets a prefix",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"CON\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/_CON.md"
+    ]
+   }
+  },
+  {
+   "name": "Preset layout changes folder and prefix",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "Notes",
+     "prefix": "Plan ",
+     "includeSource": false
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "Notes/Plan A.md"
+    ]
+   }
+  },
+  {
+   "name": "Dot segment destination is rejected",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "../private",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "error": "Use a vault folder"
+   }
+  },
+  {
+   "name": "Markdown characters stay literal",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\" note=\"**bold** [[link]]\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A\n\n\\*\\*bold\\*\\* \\[\\[link\\]\\]\n"
+    ]
+   }
+  },
+  {
+   "name": "Duplicate XML attribute is rejected",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\" text=\"B\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "error": "Invalid XML"
+   }
+  },
+  {
+   "name": "Unknown XML entity is rejected",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"&secret;\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "error": "Invalid XML"
+   }
+  },
+  {
+   "name": "Missing title has a safe fallback",
+   "args": [
+    "<opml version=\"2.0\"><body><outline note=\"Detail\"/></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "paths": [
+     "OPML imports/Untitled.md"
+    ]
+   }
+  },
+  {
+   "name": "Three levels preserve source order",
+   "args": [
+    "<opml version=\"2.0\"><body><outline text=\"A\"><outline text=\"one\"><outline text=\"two\"><outline text=\"three\"/></outline></outline></outline></body></opml>",
+    "Outline.opml",
+    {
+     "folder": "OPML imports",
+     "prefix": "",
+     "includeSource": true
+    },
+    []
+   ],
+   "expected": {
+    "bodies": [
+     "# A\n\n- one\n  - two\n    - three\n"
+    ]
+   }
+  }
+ ],
+ "note": "Args are the positional planImport arguments. Expected fields select paths, bodies without generated source properties, duplicates, statuses or warnings from the plan. An expected error gives the message prefix of a rejected input."
+}

@@ -1,0 +1,20 @@
+.opml-note-import-output {
+ max-height: 35vh;
+ overflow: auto;
+ border-top: 1px solid var(--background-modifier-border);
+ padding-top: 12px;
+}
+
+.opml-note-import-output pre {
+ white-space: pre-wrap;
+ overflow-wrap: anywhere;
+ font-size: var(--font-smaller);
+}
+
+.opml-note-import-error {
+ color: var(--text-error);
+}
+
+.opml-note-import details {
+ padding: 6px 0;
+}

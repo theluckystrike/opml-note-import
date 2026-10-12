@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0"><head><title>Project notes</title></head><body>
+<outline text="Launch plan" _note="A small release with a clear review path."><outline text="Define scope" note="Keep the first release focused."><outline text="Write acceptance cases"/><outline text="Check sample notes"/></outline><outline text="Design the workflow"/><outline text="Review and release" note="The owner approves the release."/></outline>
+<outline text="Reading list" note="Keep sources with the outline."><outline text="Books" _note="Write a short note after each chapter."/><outline text="Articles" htmlUrl="https://example.org/reading"/></outline>
+</body></opml>
