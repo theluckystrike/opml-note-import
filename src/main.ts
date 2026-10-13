@@ -14,7 +14,7 @@ export default class OpmlNoteImportPlugin extends Plugin {
 	async onload(): Promise<void> {
 		await this.loadSettings();
 		if (this.stopped) return;
-		const pro = createGitHubSponsors(this.app, this.manifest.id, SPONSORS); pro.init(); this.pro = pro; bindPro(pro);
+		const pro = createGitHubSponsors(this.app, this.manifest.id, SPONSORS, this); pro.init(); this.pro = pro; bindPro(pro);
 		const tab = new OpmlNoteImportSettingTab(this.app, this); this.addSettingTab(tab); this.register(pro.onChange(() => tab.update()));
 		this.addCommand({ id: 'import-opml', name: 'Import an outline file', callback: () => this.openImport() });
 		this.app.workspace.onLayoutReady(() => { if (this.stopped) return; void pro.refresh(); this.registerInterval(window.setInterval(() => void pro.refresh(), 6 * 60 * 60 * 1000)); });
