@@ -100,3 +100,7 @@ After a successful check, Pro can work offline for up to 14 days. Sign out or a 
 ## Support
 
 The publisher is [theluckystrike](https://github.com/theluckystrike). For a support report, include your Obsidian version, the step that failed, and the error text. A short OPML example with private content removed can help reproduce a parse problem. Do not include a GitHub access token. The plugin has no telemetry. Its source and release files use the MIT license.
+
+## Community
+
+Questions, bugs or plugin ideas? Talk to me and other Obsidian users in [Zovo Chat](https://t.me/+k2MM-BIc7SQ5OWM0) on Telegram. It has a topic for these plugins. You can also open an issue here.
