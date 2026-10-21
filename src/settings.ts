@@ -3,6 +3,7 @@ import { sponsorsSettingItems } from './license/github-obsidian';
 import { DEFAULT_LAYOUT, MAX_DEPTH, type Layout } from './outline';
 import { PRO_UI } from './pro';
 import type OpmlNoteImportPlugin from './main';
+import { helloSettingItems } from './hello/settings';
 export interface Preset extends Layout { name: string }
 export interface OpmlNoteImportSettings { layout: Layout; presets: Preset[] }
 export const DEFAULT_SETTINGS: OpmlNoteImportSettings = { layout: { ...DEFAULT_LAYOUT }, presets: [] };
@@ -13,5 +14,10 @@ export function normalizeSettings(saved: unknown): OpmlNoteImportSettings {
 }
 export class OpmlNoteImportSettingTab extends PluginSettingTab {
 	constructor(app: ConstructorParameters<typeof PluginSettingTab>[0], private importer: OpmlNoteImportPlugin) { super(app, importer); }
-	getSettingDefinitions(): SettingDefinitionItem[] { return this.importer.pro ? sponsorsSettingItems(this.importer.pro, PRO_UI).map((item) => 'type' in item && item.type === 'group' ? { ...item, heading: undefined } : item) : []; }
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		// The product rows, then the "More from NoteMods" card (packages/hello).
+		return [...this.productSettingDefinitions(), ...helloSettingItems()];
+	}
+
+	productSettingDefinitions(): SettingDefinitionItem[] { return this.importer.pro ? sponsorsSettingItems(this.importer.pro, PRO_UI).map((item) => 'type' in item && item.type === 'group' ? { ...item, heading: undefined } : item) : []; }
 }

@@ -1,6 +1,6 @@
 # OPML Note Import
 
-Convert outline exports into ordered Markdown notes. Start with an OPML file in your vault, inspect the proposed paths, then create one note for each root item, or for each item at a deeper level that you choose. Child items become nested lists. Item notes stay with their outline text.
+Convert outline exports into ordered Markdown notes. Start with an OPML file in your vault, inspect the proposed paths, then create one note for each root item, or for each item at a deeper level that you choose. Child items become nested lists.
 
 The source file stays in place. You can read the new files with the plugin turned off.
 
@@ -22,13 +22,13 @@ Each selected item becomes the heading of a separate note. Child order and inden
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/levels.png" alt="Level 2 preview with one note for each dated child of a journal root" width="720">
 
-Level 1 makes one note for each root item. If one root item holds the whole outline, choose level 2 or higher. The plugin then makes one note for each item at that level, in source order. Levels run from 1 to 6. Items above the chosen level make no notes. With source properties on, each note lists its level and parent items. Note text and URLs on those items are not imported. The preview and the import result name each such item with note text or URLs, and each branch that ends above the chosen level.
+Level 1 makes one note for each root item. If one root item holds the whole outline, choose level 2 or higher. The plugin then makes one note for each item at that level, in source order. Levels run from 1 to 6. Items above the chosen level make no notes. Note text and URLs on those items are not imported. The preview and the import result name each such item with note text or URLs, and each branch that ends above the chosen level.
 
 ### Inspect file name conflicts
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/conflicts.png" alt="Duplicate titles shown with numbered file names" width="720">
 
-Preview lists the proposed paths before you write files. Duplicate safe names receive a stable numbered suffix, starting at 2. Case variants also count as duplicates. If a destination exists, the import skips that path and reports it. It does not replace the note with source text. A file that blocks a destination folder produces an error before the import starts.
+Preview lists the proposed paths before you write files. Duplicate safe names receive a stable numbered suffix, starting at 2. Case variants also count as duplicates. If a destination exists, the import skips that path and reports it. A file that blocks a destination folder produces an error before the import starts.
 
 ### Read parse errors
 
@@ -67,13 +67,15 @@ The code uses public Obsidian APIs and browser APIs. No Node or Electron API is 
 
 A destination folder is created when needed. The default folder is OPML imports. An empty folder field puts notes at the vault root. The importer rejects dot segments, hidden folder segments, and reserved path characters. A note title is limited to 100 Unicode characters and 240 UTF-8 bytes, then cleaned for a file name. Leading dots get an underscore. A missing or blank title becomes Untitled. A reserved device name gets an underscore prefix.
 
-For a repeated export, use the same level, folder, and prefix to compare matching paths. A renamed item appears as a new path. The repeat preview does not find removed items or notes that you moved elsewhere. Import notes still skips existing paths after a comparison.
+For a repeated export, use the same level, folder, and prefix to compare matching paths. A renamed item appears as a new path. The repeat preview does not find removed items or notes that you moved elsewhere.
 
 ## Settings
 
+After a minor or major update, this plugin opens one What's new tab in the background. The tab and settings card suggest other NoteMods plugins and Zovo Chat and link to notemods.com for feedback ([privacy](https://notemods.com/privacy/)). The tab sends no data. Turn the tab off in Settings.
+
 The import dialog contains the layout controls. Source properties are on by default. They add the source path, root number, and source id to YAML frontmatter. A level above 1 also adds the level and the parent items. A source id consists of the vault source path and the item's position, such as Journal.opml#1.2; it is not a permanent identity if you reorder items.
 
-The plugin account tab contains the optional GitHub Sponsors controls. Free use includes selecting files, previewing names and text, importing notes, reporting conflicts, and keeping nested notes. There is no paid note count limit. Saved presets and repeat comparisons require an active Pro state. The parser limits remain the same in both tiers.
+The plugin account tab contains the optional GitHub Sponsors controls. There is no paid note count limit. The parser limits remain the same in both tiers.
 
 ## FAQ
 
@@ -81,7 +83,7 @@ Can this import a feed subscription export? It can preserve outline text and com
 
 What happens to rich text? HTML that arrives as escaped attribute text remains visible as text. Markdown control characters are escaped to reduce accidental formatting. Text outside the supported outline attributes is not converted.
 
-What limits apply? The parser rejects input over two million text characters, more than 100 nested XML levels, or more than 10,000 outline items. A create error is reported per path. Files created before a storage error remain in the vault; the import does not roll them back.
+What limits apply? The parser rejects input over two million text characters, more than 100 nested XML levels, or more than 10,000 outline items. Files created before a storage error remain in the vault; the import does not roll them back.
 
 What was not tested? Linux and Windows desktops, physical Android and iOS devices, exports from installed outline applications, very large production vaults, live paid sponsorship, and interrupted writes on remote storage were not tested. Unit tests cover the supplied XML acceptance cases. Desktop end-to-end tests exercise the file selector, preview, import, parse rejection, and Pro controls with a simulated Sponsors response.
 
@@ -99,7 +101,7 @@ After a successful check, Pro can work offline for up to 14 days. Sign out or a 
 
 ## Support
 
-The publisher is [theluckystrike](https://github.com/theluckystrike). For a support report, include your Obsidian version, the step that failed, and the error text. A short OPML example with private content removed can help reproduce a parse problem. Do not include a GitHub access token. The plugin has no telemetry. Its source and release files use the MIT license.
+The publisher is [theluckystrike](https://github.com/theluckystrike). For a support report, include your Obsidian version, the step that failed, and the error text. A short OPML example with private content removed can help reproduce a parse problem. Do not include a GitHub access token. Its source and release files use the MIT license.
 
 ## Community
 

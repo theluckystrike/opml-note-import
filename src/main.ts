@@ -4,6 +4,8 @@ import type { SponsorsManager } from './license/index';
 import { bindPro, isPro, onProChange, resetPro, SPONSORS } from './pro';
 import { cleanLayout, compareText, declaredEncoding, MAX_DEPTH, planImport, type ImportPlan, type Layout } from './outline';
 import { DEFAULT_SETTINGS, normalizeSettings, OpmlNoteImportSettingTab, type OpmlNoteImportSettings } from './settings';
+import { setupHello } from './hello/index';
+import WHATS_NEW from './whats-new.json';
 
 export default class OpmlNoteImportPlugin extends Plugin {
 	settings: OpmlNoteImportSettings = structuredClone(DEFAULT_SETTINGS);
@@ -12,6 +14,8 @@ export default class OpmlNoteImportPlugin extends Plugin {
 	private importing = false;
 	private stopped = false;
 	async onload(): Promise<void> {
+		// First: "What's new" reads its state before the settings load (packages/hello). It does not wait.
+		setupHello(this, WHATS_NEW);
 		await this.loadSettings();
 		if (this.stopped) return;
 		const pro = createGitHubSponsors(this.app, this.manifest.id, SPONSORS, this); pro.init(); this.pro = pro; bindPro(pro);
