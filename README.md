@@ -40,13 +40,15 @@ Invalid XML stops the plan before note creation. Files with a DOCTYPE or entity 
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/presets.png" alt="Pro layout controls with a named project preset" width="720">
 
-Pro can save a named layout with its level, folder, prefix, and source property option. Select a saved layout to apply those options to another outline. Saving the same name replaces that preset. The plugin keeps up to 50 layouts in its local data.
+Pro can save a named layout with its level, folder, prefix, and source property option. Select a saved layout to apply those options to another outline. Saving the same name replaces that preset. The plugin keeps up to 50 layouts.
 
 ### Preview repeated imports (Pro)
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/repeat.png" alt="Repeat preview with changed and unchanged output paths" width="720">
 
 Pro compares planned Markdown with the file at each destination path. It labels the file new, changed, or unchanged. A folder at the output path is shown as blocked. For changed text, it shows lines present only in the planned text with a plus sign and lines present only in the existing text with a minus sign. The comparison does not update existing files. Reordered lines can produce a changed label without added or removed lines.
+
+Without Pro, Save preset and Preview changes show a Sponsor on GitHub notice.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/opml-note-import/HEAD/docs/opml-note-import.gif" alt="Select and preview a sample outline before importing" width="720">
 
@@ -85,7 +87,7 @@ What happens to rich text? HTML that arrives as escaped attribute text remains v
 
 What limits apply? The parser rejects input over two million text characters, more than 100 nested XML levels, or more than 10,000 outline items. Files created before a storage error remain in the vault; the import does not roll them back.
 
-What was not tested? Linux and Windows desktops, physical Android and iOS devices, exports from installed outline applications, very large production vaults, live paid sponsorship, and interrupted writes on remote storage were not tested. Unit tests cover the supplied XML acceptance cases. Desktop end-to-end tests exercise the file selector, preview, import, parse rejection, and Pro controls with a simulated Sponsors response.
+What was not tested? Linux and Windows desktops, physical Android and iOS devices, exports from installed outline applications, very large production vaults, live paid sponsorship, and interrupted writes on remote storage were not tested. Desktop end-to-end tests exercise the file selector, preview, import, parse rejection, and Pro controls with a simulated Sponsors response.
 
 ## Payment, account and network
 

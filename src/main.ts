@@ -1,7 +1,7 @@
 import { Modal, Notice, Plugin, Setting, TFile, TFolder, normalizePath } from 'obsidian';
 import { createGitHubSponsors } from './license/github-obsidian';
 import type { SponsorsManager } from './license/index';
-import { bindPro, isPro, onProChange, resetPro, SPONSORS } from './pro';
+import { bindPro, isPro, onProChange, PRO_PRESETS, PRO_REPEAT, proNotice, proText, resetPro, SPONSORS } from './pro';
 import { cleanLayout, compareText, declaredEncoding, MAX_DEPTH, planImport, type ImportPlan, type Layout } from './outline';
 import { DEFAULT_SETTINGS, normalizeSettings, OpmlNoteImportSettingTab, type OpmlNoteImportSettings } from './settings';
 import { setupHello } from './hello/index';
@@ -76,7 +76,7 @@ export default class OpmlNoteImportPlugin extends Plugin {
 		this.settings.presets = [...this.settings.presets.filter((p) => p.name !== title), preset].slice(-50); await this.saveSettings(); return true;
 	}
 	async repeatPreview(source: string, layout: Layout): Promise<string[]> {
-		if (!isPro()) throw new Error('Repeat previews need Pro.');
+		if (!isPro()) throw new Error(PRO_REPEAT);
 		const plan = await this.preview(source, layout); const rows: string[] = [];
 		const existing = new Map(this.app.vault.getAllLoadedFiles().map((file) => [file.path.toLowerCase(), file]));
 		for (const note of plan.notes) {
@@ -114,10 +114,12 @@ export class ImportModal extends Modal {
 		}));
 		this.output = el.createDiv({ cls: 'opml-note-import-output' }); this.output.createEl('p', { text: files.length ? 'Select Preview to inspect names and text.' : 'Copy an .opml file into the vault, then open this command again.' });
 		const proControls = el.createEl('details', { cls: 'opml-note-import-pro' }); proControls.createEl('summary', { text: 'Pro layouts and repeat preview' });
-		new Setting(proControls).setName('Pro layout presets').setDesc(isPro() ? 'Save the folder, prefix, level and source property option.' : 'Saved layouts and repeat previews need Pro. Open the plugin settings to sign in.').addDropdown((d) => { d.addOption('', 'Select a preset'); if (isPro()) for (const p of this.importer.settings.presets) d.addOption(p.name, p.name); d.setDisabled(!isPro()).onChange((v) => { if (!isPro()) return; const p = this.importer.settings.presets.find((x) => x.name === v); if (p) { this.layout = { folder: p.folder, prefix: p.prefix, includeSource: p.includeSource, depth: p.depth }; this.draw(); } }); });
+		new Setting(proControls).setName('Pro layout presets').setDesc(isPro() ? 'Save the folder, prefix, level and source property option.' : proText('Saved layouts and repeat previews need Pro.')).addDropdown((d) => { d.addOption('', 'Select a preset'); if (isPro()) for (const p of this.importer.settings.presets) d.addOption(p.name, p.name); d.setDisabled(!isPro()).onChange((v) => { if (!isPro()) return; const p = this.importer.settings.presets.find((x) => x.name === v); if (p) { this.layout = { folder: p.folder, prefix: p.prefix, includeSource: p.includeSource, depth: p.depth }; this.draw(); } }); });
 		let presetName = '';
-		new Setting(proControls).setName('Preset name').addText((t) => t.setDisabled(!isPro()).onChange((v) => { presetName = v; })).addButton((b) => b.setButtonText('Save preset').setDisabled(!isPro()).onClick(async () => { try { if (await this.importer.savePreset(presetName, this.layout)) { new Notice('Import layout saved.'); this.draw(); } } catch (error) { this.showError(error); } }));
-		new Setting(proControls).setName('Repeated outline import').addButton((b) => b.setButtonText('Preview changes').setDisabled(!isPro()).onClick(async () => {
+		new Setting(proControls).setName('Preset name').addText((t) => t.setDisabled(!isPro()).onChange((v) => { presetName = v; })).addButton((b) => b.setButtonText('Save preset').onClick(async () => { if (!isPro()) { proNotice(PRO_PRESETS); return; } try { if (await this.importer.savePreset(presetName, this.layout)) { new Notice('Import layout saved.'); this.draw(); } } catch (error) { this.showError(error); } }));
+		new Setting(proControls).setName('Repeated outline import').addButton((b) => b.setButtonText('Preview changes').onClick(async () => {
+			// A free select shows the notice and keeps the preview text. No note is read.
+			if (!isPro()) { proNotice(PRO_REPEAT); return; }
 			const revision = ++this.revision;
 			try { const rows = await this.importer.repeatPreview(this.source, this.layout); if (revision !== this.revision) return; this.output.empty(); this.output.createEl('pre', { text: 'Comparison by output path. Existing notes stay unchanged.\n\n' + rows.join('\n\n') }); } catch (error) { if (revision === this.revision) this.showError(error); }
 		}));
