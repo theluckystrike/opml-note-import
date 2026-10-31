@@ -4,6 +4,25 @@ Convert outline exports into ordered Markdown notes. Start with an OPML file in 
 
 The source file stays in place. You can read the new files with the plugin turned off.
 
+## Quick start
+
+Save as `plan.opml`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head><title>Plan</title></head>
+  <body>
+    <outline text="Garden">
+      <outline text="Plant beans"/>
+    </outline>
+    <outline text="House"/>
+  </body>
+</opml>
+```
+
+Run OPML Note Import: Import an outline file from the command palette. Select the source, level, folder, prefix, and source property option. Select Import notes. Read the created, skipped, and error paths in the result.
+
 ## Features
 
 ### Select a local outline
@@ -93,7 +112,7 @@ What was not tested? Linux and Windows desktops, physical Android and iOS device
 
 The core features are free. Pro features need a GitHub Sponsors sponsorship of theluckystrike: $5 a month or more, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply. Your notes stay readable and editable with or without Pro.
 
-GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike. You need no account for the free features. Pro needs the GitHub account that sponsors.
+GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=opml-note-import. You need no account for the free features. Pro needs the GitHub account that sponsors.
 
 Until you select "Sign in with GitHub" in the settings, OPML Note Import makes no network requests. Sign in uses the GitHub device flow. OPML Note Import sends its public client ID and the scope `read:user` to `https://github.com/login/device/code` and shows you a code. While you enter the code at https://github.com/login/device, it asks `https://github.com/login/oauth/access_token` every few seconds to check the sign-in status. The scope permits profile reads only. GitHub needs this access to show the sponsorship tier. It grants no repository scope and no write access.
 
