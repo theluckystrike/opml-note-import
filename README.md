@@ -96,7 +96,7 @@ After a minor or major update, this plugin opens one What's new tab in the backg
 
 The import dialog contains the layout controls. Source properties are on by default. They add the source path, root number, and source id to YAML frontmatter. A level above 1 also adds the level and the parent items. A source id consists of the vault source path and the item's position, such as Journal.opml#1.2; it is not a permanent identity if you reorder items.
 
-The plugin account tab contains the optional GitHub Sponsors controls. There is no paid note count limit. The parser limits remain the same in both tiers.
+There is no paid note count limit. The parser limits remain the same in both tiers.
 
 ## FAQ
 
@@ -111,6 +111,8 @@ What was not tested? Linux and Windows desktops, physical Android and iOS device
 ## Payment, account and network
 
 The core features are free. Pro features need a GitHub Sponsors sponsorship of theluckystrike: $5 a month or more, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply. Your notes stay readable and editable with or without Pro.
+
+[One payment turns on Pro in every NoteMods plugin](https://notemods.com/pro/).
 
 GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=opml-note-import. You need no account for the free features. Pro needs the GitHub account that sponsors.
 
