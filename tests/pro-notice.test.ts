@@ -8,7 +8,7 @@ import manifest from '../manifest.json';
 // A free user can select Save preset and Preview changes in the import window. The select shows the shared Pro
 // notice with the "Sponsor on GitHub" button. No preset is saved, no note is read for a comparison, and the
 // preview text stays. A Pro user saves the preset and gets the comparison.
-const PITCH = 'Sponsor on GitHub, then sign in from the plugin settings.';
+const PITCH = 'One payment turns on Pro in every NoteMods plugin. Sponsor on GitHub, then sign in from the plugin settings.';
 const XML = '<opml><body><outline text="A"><outline text="one"/></outline><outline text="B" note="Detail"/></body></opml>';
 
 function fakePro(pro: boolean): SponsorsManager {

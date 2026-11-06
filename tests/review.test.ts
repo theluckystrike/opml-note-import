@@ -5,6 +5,7 @@ import { OpmlNoteImportSettingTab, normalizeSettings } from '../src/settings';
 import { DEFAULT_LAYOUT, planImport, safeName } from '../src/outline';
 import { bindPro, resetPro } from '../src/pro';
 import manifest from '../manifest.json';
+import { GROWTH_LIMIT, growth } from './growth';
 
 const xml = (text: string) => `<opml><body><outline text="${text}"/></body></opml>`;
 const plugin = (files: Record<string, string> = { 'Outline.opml': xml('A') }) => new OpmlNoteImportPlugin(App.createConfigured__({ files }) as never, manifest as never);
@@ -12,9 +13,13 @@ afterEach(() => { resetPro(); vi.restoreAllMocks(); });
 
 describe('review regressions', () => {
  it('rejects a malformed 100 KB tag stream without blocking the UI', () => {
-  const start = performance.now();
   expect(() => planImport('<'.repeat(100_000))).toThrow('Invalid XML');
-  expect(performance.now() - start).toBeLessThan(20000);
+  // Growth guard: 100 KB against 10 KB, both timed in this test (tests/growth.ts).
+  const g = growth((n) => {
+   const text = '<'.repeat(n);
+   return () => { try { planImport(text); } catch { /* the rejection is the work that is timed */ } };
+  }, 100_000);
+  expect(g.ratio, g.text).toBeLessThan(GROWTH_LIMIT);
  }, 30000);
  it('keeps Unicode file names within the byte limit, including suffixes', () => {
   const title = '日'.repeat(100);

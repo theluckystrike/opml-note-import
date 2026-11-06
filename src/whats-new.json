@@ -1,9 +1,9 @@
 {
 	"id": "opml-note-import",
 	"name": "OPML Note Import",
-	"version": "1.2.1",
+	"version": "1.2.2",
 	"changes": [
-		"Save preset and Preview changes in the import window now show how to get Pro, with a Sponsor on GitHub button. Nothing saves or runs until Pro is on."
+		"The Pro notice of OPML Note Import now says that one payment turns on Pro in every NoteMods plugin."
 	],
 	"tip": "Choose level 2 or higher when one root item holds the whole outline.",
 	"thanks": "Hi, I am Michael, a solo developer in Poland. OPML Note Import is one of over 100 small plugins that I make. Thank you for moving your notes into Obsidian with it.",
