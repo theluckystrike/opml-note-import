@@ -6,6 +6,7 @@ import { DEFAULT_LAYOUT, planImport, safeName } from '../src/outline';
 import { bindPro, resetPro } from '../src/pro';
 import manifest from '../manifest.json';
 import { GROWTH_LIMIT, growth } from './growth';
+import { budget } from './time-scale';
 
 const xml = (text: string) => `<opml><body><outline text="${text}"/></body></opml>`;
 const plugin = (files: Record<string, string> = { 'Outline.opml': xml('A') }) => new OpmlNoteImportPlugin(App.createConfigured__({ files }) as never, manifest as never);
@@ -20,7 +21,7 @@ describe('review regressions', () => {
    return () => { try { planImport(text); } catch { /* the rejection is the work that is timed */ } };
   }, 100_000);
   expect(g.ratio, g.text).toBeLessThan(GROWTH_LIMIT);
- }, 30000);
+ }, budget(30000));
  it('keeps Unicode file names within the byte limit, including suffixes', () => {
   const title = '日'.repeat(100);
   const plan = planImport(`<opml><body><outline text="${title}"/><outline text="${title}"/></body></opml>`);
@@ -158,7 +159,7 @@ describe('note level', () => {
   const inner = '<outline text="B"/>'.repeat(9_999);
   expect(planImport(`<opml><body><outline text="A">${inner}</outline></body></opml>`, 'Outline.opml', { ...DEFAULT_LAYOUT, depth: 2, includeSource: false }).notes).toHaveLength(9_999);
   expect(() => planImport(`<opml><body><outline text="A">${inner}<outline/><outline/></outline></body></opml>`, 'Outline.opml', { ...DEFAULT_LAYOUT, depth: 2 })).toThrow('10000 item');
- }, 30000);
+ }, budget(30000));
 });
 
 describe('note level review', () => {
